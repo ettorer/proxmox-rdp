@@ -32,7 +32,8 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         expires: 600000
-    }
+    },
+    lasterror:''
 }));
 
 // This middleware will check if user's cookie is still saved in browser and user is not set, then automatically log the user out.

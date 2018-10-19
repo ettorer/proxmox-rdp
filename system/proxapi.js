@@ -1,6 +1,7 @@
 const https = require('https');
 const async = require('async');
 const fs    = require('fs');
+const querystring = require('querystring');
 const proxmoxmodule = require('proxmox-node');
 
 let cfgjson;
@@ -18,6 +19,17 @@ let g_vmlist = [];
 const logout = function() {
     g_vmlist = [];
     proxmox.logout();
+}
+
+const domains = function(callback) {
+    //enum nodes
+    proxmox.get('/access/domains', function (err, domains) {
+        if (err) {
+            return callback(err);
+        } else {
+            return callback(null,domains.data);
+        }
+    });
 }
 
 const listvms = function (callback) {
@@ -43,6 +55,7 @@ const listvms = function (callback) {
                         }
                     });
                 }, function (err) {
+                    vmlist.sort((a, b) => (a.vmid > b.vmid) ? 1 : -1);
                     g_vmlist = vmlist; //cache the last vmlist
                     return callback(err, vmlist);
                 });
@@ -54,6 +67,52 @@ const listvms = function (callback) {
     });
 };
 
+const getvmip = function(vm, callback)
+{
+    let ipv4 = '';
+    const url = '/nodes/' + vm.node + '/qemu/' + vm.vmid + '/agent/network-get-interfaces/';
+    proxmox.get(url, function (err, net) {
+        if (!err) {
+            net.data.result.forEach(function (addr) {
+                if (addr.name == 'Ethernet') {
+                    addr['ip-addresses'].forEach(function (ip) {
+                        if (ip['ip-address-type'] == 'ipv4')
+                            ipv4 = ip['ip-address'];
+                    });
+                }
+            });
+        }
+        callback(err, ipv4);
+    });
+}
+
+const vmpower = function(vm, action, callback)
+{
+    var body = { node: vm.node, vmid: vm.vmid };
+    body = querystring.stringify(body);
+    const url = '/nodes/' + vm.node + '/qemu/' + vm.vmid + '/status/' + action;
+    proxmox.post(url, body, function(err, res) {//this API will return an UPID used to query the status/progress of the task
+        if(err)
+            return callback(err);
+        let upid = encodeURIComponent(res.data);
+        const stsurl = '/nodes/' + vm.node + '/tasks/' + upid + '/status';
+        var timeout = setTimeout(function() {
+            proxmox.get(stsurl,function(stserr, status) {
+                if(status.data.exitstatus == 'OK') {
+                    var url = '/nodes/' + vm.node + '/qemu/' + vm.vmid + '/status/current'
+                    clearInterval(this);
+                    timeout = setTimeout(function () {
+                        proxmox.get(url, function (err, current) {
+                            if(current.data.status ='running') {
+                                callback(null, current);
+                            }
+                        });
+                    }, 3000);
+                }
+            });
+        }, 3000);
+    });
+}
 /*
 console.log(config);
 config.user = 'ettorer';
@@ -73,7 +132,10 @@ module.exports = {
     enumvm: listvms,
     login: proxmox.login,
     logout: logout,
-    vmlist: function(){
+    vmlist: function() {
          return g_vmlist;
-        }
+        },
+    domains: domains,
+    getvmip: getvmip,
+    vmpower: vmpower
     }

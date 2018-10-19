@@ -13,29 +13,44 @@ const startrdp = function(vmid, credentials, callback) {
         const err = new Error('vm not found');
         return callback(err);
     }
-    //TODO: if the vm is off then turn on and wait for rdp port availability
-    var opts = {
-        service: "TERMSRV/" + thevm.name,
-        account: (credentials.domain.length) ? credentials.domain + "\\" + credentials.username : credentials.username,
-        password: credentials.password
-    };
+    if(thevm.status == 'stopped') {//the vm is off
+        proxapi.vmpower(thevm, 'start', function(err) {
+            if(err) {
+                return callback(err);
+            }
+            return continuestart(thevm, credentials, callback);
+        });
+    } else 
+        return continuestart(thevm, credentials, callback);
+}
 
-    cred.setCredentials(opts, function (err) {
-        if (err) {
-            console.log(err);
-            return;
-        } else {
-            exec('mstsc /v:' + thevm.name, function(error, stdout, stderr) {
-                delete opts.password;
-                cred.deleteCredentials(opts, function (err) {
-                    if (err)
-                        console.log(err);
-                    return;
+const continuestart = function (thevm, credentials, callback)
+{ 
+    proxapi.getvmip(thevm, function(err, ip) {
+        //TODO: if the vm is off then turn on and wait for rdp port availability
+        var opts = {
+            service: "TERMSRV/" + thevm.name,
+            account: (credentials.domain.length) ? credentials.domain + "\\" + credentials.username : credentials.username,
+            password: credentials.password
+        };
+
+        cred.setCredentials(opts, function (err) {
+            if (err) {
+                console.log(err);
+                return;
+            } else {
+                exec('mstsc /v:' + thevm.name, function (error, stdout, stderr) {
+                    delete opts.password;
+                    cred.deleteCredentials(opts, function (err) {
+                        if (err)
+                            console.log(err);
+                        return;
+                    });
                 });
-            });
-        }
-    });
-    callback(null);
+            }
+        });
+        callback(null);
+    })
 }
 
 module.exports = startrdp;

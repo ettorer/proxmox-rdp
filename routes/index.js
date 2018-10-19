@@ -8,21 +8,23 @@ var sessionChecker = (req, res, next) => {
     if (req.session.user && req.cookies.user_sid) {
         next();
     } else {
-        res.render('login', {
+        res.redirect('/login');
+/*        res.render('login', {
             title: 'Login',
             message: 'Proxmox login',
             name: 'loginname'
-        });
+        });*/
     }
 };
 
 // route for Home-Page
 router.get('/', sessionChecker, (req, res) => {
-    res.render('login', {
+    res.redirect('/dashboard');
+    /*res.render('login', {
         title: 'Login',
         message: 'Proxmox login',
         name: 'loginname'
-    });
+    });*/
 });
 
 // route to start RDP
@@ -35,17 +37,24 @@ router.get('/rdp/:vmid', sessionChecker, (req, res, err) => {
 
 // route for user Login
 router.route('/login')
-    .get(sessionChecker, (req, res) => {
-        res.render('login', {
-            title: 'Login',
-            message: 'Proxmox login',
-            name: 'loginname'
-        });
+    .get((req, res) => {
+        proxapi.domains(function(err, domains) {
+            if(err) {
+                req.session.lasterror = err.message;
+            } 
+            res.render('login', {
+                title: 'Login',
+                message: 'Proxmox login',
+                name: 'loginname',
+                lasterror: req.session.lasterror,
+                domains: domains
+            });                
+        })
     })
     .post((req, res) => {
         const username = req.body.username;
         const password = req.body.password;
-        const realm = req.body.realm;
+        const realm = req.body.realmcb;
 
         proxapi.login(username, password, realm, function (err, reply) {
             if (err) {
@@ -59,14 +68,15 @@ router.route('/login')
         });
     });
 
-
 // route for user's dashboard
 router.get('/dashboard', (req, res) => {
     if (req.session.user && req.cookies.user_sid) {
         proxapi.enumvm(function (err, vmlist) {
             if (err) {
+                req.session.lasterror = err.message;
                 res.redirect('/login');
             } else {
+                req.session.lasterror = '';
                 res.render('dashboard', {
                     title: 'Dashboard',
                     message: 'Proxmox Dashboard',

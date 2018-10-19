@@ -23,7 +23,7 @@ block content
                     th(scope="col") Virtual machine name
             - var i = 0;
             tbody
-                each vm, i in vmlist 
+                each vm in vmlist 
                     tr.table-success 
                         th(scope="row")
                             span #{vm.vmid}
