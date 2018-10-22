@@ -4,6 +4,11 @@ const fs    = require('fs');
 const querystring = require('querystring');
 const proxmoxmodule = require('proxmox-node');
 
+const statusimg = {
+    running: '/static/icons/green32.png',
+    stopped: '/static/icons/off32.png'
+}
+
 let cfgjson;
 try {
     cfgjson = fs.readFileSync('config.json', 'utf8');
@@ -19,6 +24,13 @@ let g_vmlist = [];
 const logout = function() {
     g_vmlist = [];
     proxmox.logout();
+}
+
+const saveconfig = function(body) {
+    config.proxmox.ip = body.hostname;
+    config.proxmox.port = body.port;
+    cfgjson = JSON.stringify(config);
+    fs.writeFileSync("config.json", cfgjson);
 }
 
 const domains = function(callback) {
@@ -49,6 +61,7 @@ const listvms = function (callback) {
                         } else {
                             vms.data.forEach(vm => {
                                 vm.node = node.node;
+                                vm.image = statusimg[vm.status];
                                 vmlist.push(vm);
                             });
                             nodecb();
@@ -70,6 +83,7 @@ const listvms = function (callback) {
 const getvmip = function(vm, callback)
 {
     let ipv4 = '';
+    ///nodes/{node}/qemu/{vmid}/agent/network-get-interfaces
     const url = '/nodes/' + vm.node + '/qemu/' + vm.vmid + '/agent/network-get-interfaces/';
     proxmox.get(url, function (err, net) {
         if (!err) {
@@ -130,12 +144,15 @@ listvms(config, function(err, list) {
 */
 module.exports = {
     enumvm: listvms,
-    login: proxmox.login,
+    login:  proxmox.login,
     logout: logout,
     vmlist: function() {
          return g_vmlist;
-        },
+    },
     domains: domains,
     getvmip: getvmip,
-    vmpower: vmpower
-    }
+    vmpower: vmpower,
+    statusimg: statusimg,
+    saveconfig: saveconfig,
+    config: config
+}

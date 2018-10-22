@@ -2,14 +2,14 @@ extend layout.pug
 
 block content
     .page-header
-        h1 Proxmox Connector
+        h1 Proxmox Connector Dashboard
     nav.navbar.navbar-default
         .container-fluid
             // Collect the nav links, forms, and other content for toggling
             #bs-example-navbar-collapse-1.collapse.navbar-collapse
                 ul.nav.navbar-nav
                     li
-                        a(href='/dashboard') Dashboard
+                        a(href='/config') Config
                 ul.nav.navbar-nav.navbar-right
                     li
                         a(href='/logout') Log Out
@@ -19,13 +19,16 @@ block content
         table.table.table-bordered
             thead
                 tr
-                    th(scope="col") VMID
+                    th(style="width: 10%" scope="col") VMID
+                    th(style="width: 10%" scope="col") Status
                     th(scope="col") Virtual machine name
             - var i = 0;
             tbody
                 each vm in vmlist 
                     tr.table-success 
-                        th(scope="row")
+                        td(scope="row")
                             span #{vm.vmid}
+                        td
+                            img.media-photo(src=vm.image )
                         td
                             a(href='/rdp/' + vm.vmid) #{vm.name}

@@ -38,10 +38,13 @@ router.get('/rdp/:vmid', sessionChecker, (req, res, err) => {
 // route for user Login
 router.route('/login')
     .get((req, res) => {
-        proxapi.domains(function(err, domains) {
+        proxapi.domains(function(err, domainlist) {
+            const domains = [];
             if(err) {
                 req.session.lasterror = err.message;
-            } 
+            } else {
+                domains = domainlist;
+            }
             res.render('login', {
                 title: 'Login',
                 message: 'Proxmox login',
@@ -88,6 +91,23 @@ router.get('/dashboard', (req, res) => {
     } else {
         res.redirect('/login');
     }
+});
+
+// route config
+router.get('/config', (req, res) => {
+    req.session.lasterror = '';
+    res.render('config', {
+        title: 'Config',
+        message: 'Proxmox Connector Configuration',
+        name: 'dashboardname',
+        config: proxapi.config
+    });
+});
+
+// route saveconfig
+router.post('/saveconfig', (req, res) => {
+    proxapi.saveconfig(req.body);
+    res.redirect('/config');
 });
 
 // route for user logout

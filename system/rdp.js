@@ -28,8 +28,9 @@ const continuestart = function (thevm, credentials, callback)
 { 
     proxapi.getvmip(thevm, function(err, ip) {
         //TODO: if the vm is off then turn on and wait for rdp port availability
-        var opts = {
-            service: "TERMSRV/" + thevm.name,
+        const hostname = (err) ? thevm.name : ip;
+        const opts = {
+            service: "TERMSRV/" + hostname,
             account: (credentials.domain.length) ? credentials.domain + "\\" + credentials.username : credentials.username,
             password: credentials.password
         };
@@ -39,7 +40,7 @@ const continuestart = function (thevm, credentials, callback)
                 console.log(err);
                 return;
             } else {
-                exec('mstsc /v:' + thevm.name, function (error, stdout, stderr) {
+                exec('mstsc /v:' + hostname, function (error, stdout, stderr) {
                     delete opts.password;
                     cred.deleteCredentials(opts, function (err) {
                         if (err)

@@ -1,0 +1,24 @@
+extend layout.pug
+
+block content
+    .page-header
+        h1 Proxmox Connector Configuration
+    nav.navbar.navbar-default
+        .container-fluid
+            #bs-example-navbar-collapse-1.collapse.navbar-collapse
+                ul.nav.navbar-nav
+                    li
+                        a(href='/dashboard') Dashboard
+                ul.nav.navbar-nav.navbar-right
+    .container.row.Login
+        .jumbotron.col-md-4.col-md-offset-4
+            form(action='/saveconfig' method='post')
+                .form-group
+                    label(for="hostname") Proxmox node hostname/IP:
+                    input.form-control(type='text' name='hostname' id='hostname' placeholder="Proxmox node hostname/ip" value=config.proxmox.ip)
+                .form-group
+                    label(for="port") Port:
+                    input.form-control(type='text' name='port' id='port' placeholder="Port" value=config.proxmox.port)
+                .form-check
+                    input.btn.btn-primary(type='submit' value='Save')
+
