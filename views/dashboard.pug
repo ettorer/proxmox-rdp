@@ -20,7 +20,7 @@ block content
             thead
                 tr
                     th(style="width: 10%" scope="col") VMID
-                    th(style="width: 10%" scope="col") Status
+                    th(style="width: 5%" scope="col") Status
                     th(scope="col") Virtual machine name
             - var i = 0;
             tbody
@@ -29,6 +29,9 @@ block content
                         td(scope="row")
                             span #{vm.vmid}
                         td
-                            img.media-photo(src=vm.image )
+                            span.fa-stack
+                                if vm.running
+                                    i.fa.fa-square.fa-stack-2x(style="color:#20ff20")
+                                i.fa.fa-desktop.fa-stack-1x
                         td
                             a(href='/rdp/' + vm.vmid) #{vm.name}

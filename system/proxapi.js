@@ -4,11 +4,6 @@ const fs    = require('fs');
 const querystring = require('querystring');
 const proxmoxmodule = require('proxmox-node');
 
-const statusimg = {
-    running: '/static/icons/green32.png',
-    stopped: '/static/icons/off32.png'
-}
-
 let cfgjson;
 try {
     cfgjson = fs.readFileSync('config.json', 'utf8');
@@ -31,11 +26,12 @@ const saveconfig = function(body) {
     config.proxmox.port = body.port;
     cfgjson = JSON.stringify(config);
     fs.writeFileSync("config.json", cfgjson);
+    proxmox.config(config.proxmox.ip, config.proxmox.port);
 }
 
 const domains = function(callback) {
     //enum nodes
-    proxmox.get('/access/domains', function (err, domains) {
+    proxmox.callApi('/access/domains', function (err, domains) {
         if (err) {
             return callback(err);
         } else {
@@ -61,7 +57,7 @@ const listvms = function (callback) {
                         } else {
                             vms.data.forEach(vm => {
                                 vm.node = node.node;
-                                vm.image = statusimg[vm.status];
+                                vm.running = vm.status == 'running';
                                 vmlist.push(vm);
                             });
                             nodecb();

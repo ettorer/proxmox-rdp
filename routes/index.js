@@ -39,7 +39,7 @@ router.get('/rdp/:vmid', sessionChecker, (req, res, err) => {
 router.route('/login')
     .get((req, res) => {
         proxapi.domains(function(err, domainlist) {
-            const domains = [];
+            let domains = [];
             if(err) {
                 req.session.lasterror = err.message;
             } else {
@@ -61,6 +61,7 @@ router.route('/login')
 
         proxapi.login(username, password, realm, function (err, reply) {
             if (err) {
+                req.session.lasterror = err.message;
                 res.redirect('/login');
             } else {
                 req.session.user = reply.ticket;

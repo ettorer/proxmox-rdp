@@ -1,6 +1,7 @@
-var cred = require("rdpcred");
-var exec = require('child_process').exec;
+const cred = require("rdpcred");
+const exec = require('child_process').exec;
 const proxapi = require('./proxapi');
+const os = require('os');
 
 const startrdp = function(vmid, credentials, callback) {
     const vmlist = proxapi.vmlist();
@@ -27,31 +28,54 @@ const startrdp = function(vmid, credentials, callback) {
 const continuestart = function (thevm, credentials, callback)
 { 
     proxapi.getvmip(thevm, function(err, ip) {
-        //TODO: if the vm is off then turn on and wait for rdp port availability
+        //TODO: wait for rdp server availability by trying a TCP connection on port 3389... 
         const hostname = (err) ? thevm.name : ip;
-        const opts = {
-            service: "TERMSRV/" + hostname,
-            account: (credentials.domain.length) ? credentials.domain + "\\" + credentials.username : credentials.username,
-            password: credentials.password
-        };
+        const platform = os.platform();
+        switch(platform) {
+            case 'linux':
+                return startlinux(thevm, credentials, hostname, callback);
+            case 'win32':
+                return startwin32(thevm, credentials, hostname, callback);
+            default:
+                return callback(new Error('unsupported platform'));
+        }
+    });
+}
 
-        cred.setCredentials(opts, function (err) {
-            if (err) {
-                console.log(err);
-                return;
-            } else {
-                exec('mstsc /v:' + hostname, function (error, stdout, stderr) {
-                    delete opts.password;
-                    cred.deleteCredentials(opts, function (err) {
-                        if (err)
-                            console.log(err);
-                        return;
-                    });
+const startwin32 = function(thevm, credentials, hostname, callback)
+{
+    const opts = {
+        service: "TERMSRV/" + hostname,
+        account: (credentials.domain.length) ? credentials.domain + "\\" + credentials.username : credentials.username,
+        password: credentials.password
+    };
+
+    cred.setCredentials(opts, function (err) {
+        if (err) {
+            console.log(err);
+            return;
+        } else {
+            exec('mstsc /v:' + hostname, function (error, stdout, stderr) {
+                delete opts.password;
+                cred.deleteCredentials(opts, function (err) {
+                    if (err)
+                        console.log(err);
+                    return;
                 });
-            }
-        });
-        callback(null);
-    })
+            });
+        }
+    });
+    callback(null);
+}
+
+const startlinux = function (thevm, credentials, hostname, callback) 
+{
+    const account = (credentials.domain.length) ? credentials.domain + "\\" + credentials.username : credentials.username;
+//    const cmdline = `xfreerdp /v:{hostname} /u:{account} /p:{credentials.password} --cert-ignore /f`;
+    const cmdline = "xfreerdp /v:"+ hostname+" /u:"+ account+" /p:"+credentials.password+" --cert-ignore /f";
+    exec(cmdline, function (error, stdout, stderr) {
+    });
+    callback(null);
 }
 
 module.exports = startrdp;
