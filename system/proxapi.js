@@ -148,7 +148,6 @@ module.exports = {
     domains: domains,
     getvmip: getvmip,
     vmpower: vmpower,
-    statusimg: statusimg,
     saveconfig: saveconfig,
     config: config
 }

@@ -70,10 +70,17 @@ const startwin32 = function(thevm, credentials, hostname, callback)
 
 const startlinux = function (thevm, credentials, hostname, callback) 
 {
-    const account = (credentials.domain.length) ? credentials.domain + "\\" + credentials.username : credentials.username;
-//    const cmdline = `xfreerdp /v:{hostname} /u:{account} /p:{credentials.password} --cert-ignore /f`;
-    const cmdline = "xfreerdp /v:"+ hostname+" /u:"+ account+" /p:"+credentials.password+" --cert-ignore /f";
+    const account = (credentials.domain.length) ? credentials.domain + "\\\\" + credentials.username : credentials.username;
+//    const cmdline = `xfreerdp /v:{hostname} /u:{account} /p:{credentials.password} /cert-ignore /f`;
+    const cmdline = "xfreerdp /v:"+ hostname+" /u:"+ account+" /p:"+credentials.password+" /cert-ignore /f";
+    console.log(cmdline);
     exec(cmdline, function (error, stdout, stderr) {
+        if(error)
+            console.log(error);
+        if(stdout.length)
+            console.log(stdout);
+        if(stderr.length)
+            console.log(stderr);
     });
     callback(null);
 }
